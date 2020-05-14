@@ -1,0 +1,306 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "hw_04072020.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "authorship_tag": "ABX9TyMBqBGvELel+4MKiSCCY7bx",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/anjaleeDS/DataVizStanford/blob/master/Movie%20ratings%20data%20play%20with%20vega_movies%20\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "HCn9ZzM29GwV",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# declarations of libs\n",
+        "import matplotlib.pyplot as plt\n",
+        "import seaborn as sns\n",
+        "import pandas as pd\n",
+        "import math\n",
+        "from numpy import nan_to_num\n",
+        "from vega_datasets import data\n",
+        "import altair as alt\n",
+        "\n",
+        "md = data.movies()\n",
+        "md.columns\n",
+        "# md.describe"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "UlioZAhD-TdH",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#what's in this data set?\n",
+        "md.columns\n",
+        "print(md.MPAA_Rating.unique())\n",
+        "\n",
+        "#numTitles=(md.Title.count())\n",
+        "numberof=(md.Major_Genre.count())\n",
+        "print(md.Major_Genre[2])\n",
+        "print(numberof)\n",
+        "# md[md.isna()] this is the same as isnan()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "u_LoueGb_GTd",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "\n",
+        "#sns.pairplot(data=md,hue='Source') #crazy number of pair plots\n",
+        "\n",
+        "new_df = pd.DataFrame({'IMDRR':0.0,'RTR':0.0, 'count_I':0, 'count_R':0}, index=md.MPAA_Rating.unique())\n",
+        "\n",
+        "I_score = R_score = ci = cr = 0\n",
+        "\n",
+        "for x in range(md.Title.count()):\n",
+        "  rating = md.MPAA_Rating[x]\n",
+        "  ci = 1\n",
+        "  if math.isnan(md.IMDB_Rating[x]):\n",
+        "    ci = 0\n",
+        "  I_score = nan_to_num(md.IMDB_Rating[x])\n",
+        "  cr = 1\n",
+        "  if math.isnan(md.Rotten_Tomatoes_Rating[x]):\n",
+        "    cr = 0\n",
+        "  R_score = nan_to_num(md.Rotten_Tomatoes_Rating[x])\n",
+        "\n",
+        "  new_df.loc[rating] = new_df.loc[rating] + (I_score, R_score, ci, cr)\n",
+        "\n",
+        "# print(new_df, \"before\")\n",
+        "\n",
+        "MPAAs = md.MPAA_Rating.unique()\n",
+        "\n",
+        "for x in range (len(MPAAs)):\n",
+        "  (new_df.loc[MPAAs[x]]['IMDRR']) = nan_to_num(new_df.loc[MPAAs[x]]['IMDRR'])/(new_df.loc[MPAAs[x]]['count_I'])\n",
+        "  (new_df.loc[MPAAs[x]]['RTR']) = nan_to_num(new_df.loc[MPAAs[x]]['RTR'])/(new_df.loc[MPAAs[x]]['count_R'])\n",
+        "\n",
+        "# print(new_df, \"after\")\n",
+        "# print(new_df.loc['R']['RTR'])\n",
+        "\n",
+        "fig, ax1 = plt.subplots(figsize=(10,6))\n",
+        "color = 'tab:green'\n",
+        "ax1.set_title('Baises between Average IMDRR vs Average RTR by MPAA', fontsize=16)\n",
+        "ax1.set_xlabel('MPAA', fontsize=16)\n",
+        "ax1.set_ylabel('IMDRR', fontsize=16, color=color)\n",
+        "ax2 = sns.scatterplot(x=new_df.index, y=new_df['IMDRR'], data = new_df, color = color)\n",
+        "\n",
+        "ax1.tick_params(axis='y')\n",
+        "ax2 = ax2.twinx()\n",
+        "color = 'tab:red'\n",
+        "ax2.set_ylabel('RTR', fontsize=16, color=color)\n",
+        "ax2 = sns.scatterplot(x=new_df.index, y=new_df['RTR'], data = new_df, color = color)\n",
+        "ax2.tick_params(axis='y', color=color)\n",
+        "plt.show()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "3iwP-ovpCori",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "sns.boxplot(data=md, y='IMDB_Rating', x='MPAA_Rating')\n",
+        "\n",
+        "#f, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(7, 5), sharex=True)\n",
+        "#sns.barplot(x=x, y=y2, palette=\"vlag\", ax=ax2)\n",
+        "#ax2.axhline(0, color=\"k\", clip_on=False)\n",
+        "\n",
+        "plt.title('thirdplot')\n",
+        "plt.show()"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "r5fpvEgFi_SP",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "from time import gmtime, strptime\n",
+        "\n",
+        "for x in range(0,md.Title.count()):\n",
+        "  print(strftime(md.Release_Date[x]), )"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "vJh12SMj_yDb",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "sns.pairplot(md)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "tOGqbB-HCZ5c",
+        "colab_type": "code",
+        "outputId": "0238d3c1-ea06-4b6b-b72a-422080565a31",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 187
+        }
+      },
+      "source": [
+        "weather = data.weather()\n",
+        "# ds = data.weball26()\n",
+        "ud = data.unemployment_across_industries()\n",
+        "bd = data.burtin()\n",
+        "\n",
+        "# average peni, strep, neo amount per genus by gram\n",
+        "avg\n",
+        "\n",
+        "# bd_plot = sns.catplot(data=bd, x='Genus', y='Neomycin', hue='Gram_Staining', kind='strip')\n",
+        "# bd_plot.despine(left=True)\n",
+        "\n",
+        "# peni_chart = alt.Chart(bd).mark_circle(size=60).encode(\n",
+        "#     x='Genus',\n",
+        "#     y='Gram_Staining',\n",
+        "#     color='Penicillin',\n",
+        "#     tooltip=['Bacteria', 'Genus', 'Gram_Staining','Penicillin']\n",
+        "# ).interactive()\n",
+        "# strepto_chart = alt.Chart(bd).mark_circle(size=60).encode(\n",
+        "#     x='Genus',\n",
+        "#     y='Gram_Staining',\n",
+        "#     color='Streptomycin',\n",
+        "#     tooltip=['Bacteria', 'Genus', 'Streptomycin','Gram_Staining']\n",
+        "# ).interactive()\n",
+        "# neomycin_chart = alt.Chart(bd).mark_circle(size=60).encode(\n",
+        "#     x='Genus',\n",
+        "#     y='Gram_Staining',\n",
+        "#     color='Neomycin',\n",
+        "#     tooltip=['Bacteria', 'Genus', 'Neomycin','Gram_Staining']\n",
+        "# ).interactive()\n",
+        "\n",
+        "# peni_chart | strepto_chart | neomycin_chart\n",
+        "\n"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "alt.HConcatChart(...)"
+            ],
+            "text/html": [
+              "\n",
+              "<div id=\"altair-viz-8763ba2ddb804d27a6b26c2ba4a1bac9\"></div>\n",
+              "<script type=\"text/javascript\">\n",
+              "  (function(spec, embedOpt){\n",
+              "    let outputDiv = document.currentScript.previousElementSibling;\n",
+              "    if (outputDiv.id !== \"altair-viz-8763ba2ddb804d27a6b26c2ba4a1bac9\") {\n",
+              "      outputDiv = document.getElementById(\"altair-viz-8763ba2ddb804d27a6b26c2ba4a1bac9\");\n",
+              "    }\n",
+              "    const paths = {\n",
+              "      \"vega\": \"https://cdn.jsdelivr.net/npm//vega@5?noext\",\n",
+              "      \"vega-lib\": \"https://cdn.jsdelivr.net/npm//vega-lib?noext\",\n",
+              "      \"vega-lite\": \"https://cdn.jsdelivr.net/npm//vega-lite@4.8.1?noext\",\n",
+              "      \"vega-embed\": \"https://cdn.jsdelivr.net/npm//vega-embed@6?noext\",\n",
+              "    };\n",
+              "\n",
+              "    function loadScript(lib) {\n",
+              "      return new Promise(function(resolve, reject) {\n",
+              "        var s = document.createElement('script');\n",
+              "        s.src = paths[lib];\n",
+              "        s.async = true;\n",
+              "        s.onload = () => resolve(paths[lib]);\n",
+              "        s.onerror = () => reject(`Error loading script: ${paths[lib]}`);\n",
+              "        document.getElementsByTagName(\"head\")[0].appendChild(s);\n",
+              "      });\n",
+              "    }\n",
+              "\n",
+              "    function showError(err) {\n",
+              "      outputDiv.innerHTML = `<div class=\"error\" style=\"color:red;\">${err}</div>`;\n",
+              "      throw err;\n",
+              "    }\n",
+              "\n",
+              "    function displayChart(vegaEmbed) {\n",
+              "      vegaEmbed(outputDiv, spec, embedOpt)\n",
+              "        .catch(err => showError(`Javascript Error: ${err.message}<br>This usually means there's a typo in your chart specification. See the javascript console for the full traceback.`));\n",
+              "    }\n",
+              "\n",
+              "    if(typeof define === \"function\" && define.amd) {\n",
+              "      requirejs.config({paths});\n",
+              "      require([\"vega-embed\"], displayChart, err => showError(`Error loading script: ${err.message}`));\n",
+              "    } else if (typeof vegaEmbed === \"function\") {\n",
+              "      displayChart(vegaEmbed);\n",
+              "    } else {\n",
+              "      loadScript(\"vega\")\n",
+              "        .then(() => loadScript(\"vega-lite\"))\n",
+              "        .then(() => loadScript(\"vega-embed\"))\n",
+              "        .catch(showError)\n",
+              "        .then(() => displayChart(vegaEmbed));\n",
+              "    }\n",
+              "  })({\"config\": {\"view\": {\"continuousWidth\": 400, \"continuousHeight\": 300}}, \"hconcat\": [{\"mark\": {\"type\": \"circle\", \"size\": 60}, \"encoding\": {\"color\": {\"type\": \"quantitative\", \"field\": \"Penicillin\"}, \"tooltip\": [{\"type\": \"nominal\", \"field\": \"Bacteria\"}, {\"type\": \"nominal\", \"field\": \"Genus\"}, {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}, {\"type\": \"quantitative\", \"field\": \"Penicillin\"}], \"x\": {\"type\": \"nominal\", \"field\": \"Genus\"}, \"y\": {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}}, \"selection\": {\"selector022\": {\"type\": \"interval\", \"bind\": \"scales\", \"encodings\": [\"x\", \"y\"]}}}, {\"mark\": {\"type\": \"circle\", \"size\": 60}, \"encoding\": {\"color\": {\"type\": \"quantitative\", \"field\": \"Streptomycin\"}, \"tooltip\": [{\"type\": \"nominal\", \"field\": \"Bacteria\"}, {\"type\": \"nominal\", \"field\": \"Genus\"}, {\"type\": \"quantitative\", \"field\": \"Streptomycin\"}, {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}], \"x\": {\"type\": \"nominal\", \"field\": \"Genus\"}, \"y\": {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}}, \"selection\": {\"selector023\": {\"type\": \"interval\", \"bind\": \"scales\", \"encodings\": [\"x\", \"y\"]}}}, {\"mark\": {\"type\": \"circle\", \"size\": 60}, \"encoding\": {\"color\": {\"type\": \"quantitative\", \"field\": \"Neomycin\"}, \"tooltip\": [{\"type\": \"nominal\", \"field\": \"Bacteria\"}, {\"type\": \"nominal\", \"field\": \"Genus\"}, {\"type\": \"quantitative\", \"field\": \"Neomycin\"}, {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}], \"x\": {\"type\": \"nominal\", \"field\": \"Genus\"}, \"y\": {\"type\": \"nominal\", \"field\": \"Gram_Staining\"}}, \"selection\": {\"selector024\": {\"type\": \"interval\", \"bind\": \"scales\", \"encodings\": [\"x\", \"y\"]}}}], \"data\": {\"name\": \"data-8833440f737304311e72aeeffd7b9881\"}, \"$schema\": \"https://vega.github.io/schema/vega-lite/v4.8.1.json\", \"datasets\": {\"data-8833440f737304311e72aeeffd7b9881\": [{\"Bacteria\": \"Aerobacter aerogenes\", \"Penicillin\": 870.0, \"Streptomycin\": 1.0, \"Neomycin\": 1.6, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Bacillus anthracis\", \"Penicillin\": 0.001, \"Streptomycin\": 0.01, \"Neomycin\": 0.007, \"Gram_Staining\": \"positive\", \"Genus\": \"other\"}, {\"Bacteria\": \"Brucella abortus\", \"Penicillin\": 1.0, \"Streptomycin\": 2.0, \"Neomycin\": 0.02, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Diplococcus pneumoniae\", \"Penicillin\": 0.005, \"Streptomycin\": 11.0, \"Neomycin\": 10.0, \"Gram_Staining\": \"positive\", \"Genus\": \"other\"}, {\"Bacteria\": \"Escherichia coli\", \"Penicillin\": 100.0, \"Streptomycin\": 0.4, \"Neomycin\": 0.1, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Klebsiella pneumoniae\", \"Penicillin\": 850.0, \"Streptomycin\": 1.2, \"Neomycin\": 1.0, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Mycobacterium tuberculosis\", \"Penicillin\": 800.0, \"Streptomycin\": 5.0, \"Neomycin\": 2.0, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Proteus vulgaris\", \"Penicillin\": 3.0, \"Streptomycin\": 0.1, \"Neomycin\": 0.1, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Pseudomonas aeruginosa\", \"Penicillin\": 850.0, \"Streptomycin\": 2.0, \"Neomycin\": 0.4, \"Gram_Staining\": \"negative\", \"Genus\": \"other\"}, {\"Bacteria\": \"Salmonella (Eberthella) typhosa\", \"Penicillin\": 1.0, \"Streptomycin\": 0.4, \"Neomycin\": 0.008, \"Gram_Staining\": \"negative\", \"Genus\": \"Salmonella\"}, {\"Bacteria\": \"Salmonella schottmuelleri\", \"Penicillin\": 10.0, \"Streptomycin\": 0.8, \"Neomycin\": 0.09, \"Gram_Staining\": \"negative\", \"Genus\": \"Salmonella\"}, {\"Bacteria\": \"Staphylococcus albus\", \"Penicillin\": 0.007, \"Streptomycin\": 0.1, \"Neomycin\": 0.001, \"Gram_Staining\": \"positive\", \"Genus\": \"Staphylococcus\"}, {\"Bacteria\": \"Staphylococcus aureus\", \"Penicillin\": 0.03, \"Streptomycin\": 0.03, \"Neomycin\": 0.001, \"Gram_Staining\": \"positive\", \"Genus\": \"Staphylococcus\"}, {\"Bacteria\": \"Streptococcus fecalis\", \"Penicillin\": 1.0, \"Streptomycin\": 1.0, \"Neomycin\": 0.1, \"Gram_Staining\": \"positive\", \"Genus\": \"Streptococcus\"}, {\"Bacteria\": \"Streptococcus hemolyticus\", \"Penicillin\": 0.001, \"Streptomycin\": 14.0, \"Neomycin\": 10.0, \"Gram_Staining\": \"positive\", \"Genus\": \"Streptococcus\"}, {\"Bacteria\": \"Streptococcus viridans\", \"Penicillin\": 0.005, \"Streptomycin\": 10.0, \"Neomycin\": 40.0, \"Gram_Staining\": \"positive\", \"Genus\": \"Streptococcus\"}]}}, {\"mode\": \"vega-lite\"});\n",
+              "</script>"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 65
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "i8lyOv63ms3g",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        ""
+      ],
+      "execution_count": 0,
+      "outputs": []
+    }
+  ]
+}
